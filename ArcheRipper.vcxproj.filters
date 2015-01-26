@@ -13,6 +13,7 @@
     <ClInclude Include="Window.h" />
     <ClInclude Include="Deleter.h" />
     <ClInclude Include="ComObject.h" />
+    <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Manifest.xml" />

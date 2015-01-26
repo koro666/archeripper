@@ -33,6 +33,7 @@ typedef string tstring;
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 #define THIS_HINSTANCE reinterpret_cast<HINSTANCE>(&__ImageBase)
 
+#include "Version.h"
 #include "Startup.h"
 #include "Deleter.h"
 #include "Crest.h"

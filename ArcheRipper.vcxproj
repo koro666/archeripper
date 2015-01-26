@@ -82,6 +82,7 @@
     <ClInclude Include="Deleter.h" />
     <ClInclude Include="Startup.h" />
     <ClInclude Include="StdAfx.h" />
+    <ClInclude Include="Version.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
