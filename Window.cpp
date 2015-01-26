@@ -14,7 +14,7 @@ m_hCtlLv(NULL)
 {
 }
 
-bool Window::Register()
+HRESULT Window::Register()
 {
 	s_brush = CreateSolidBrush(BGCOLOR);
 
@@ -38,7 +38,10 @@ bool Window::Register()
 
 	s_atom = RegisterClassEx(&wcx);
 
-	return !!s_atom;
+	if (s_atom)
+		return S_OK;
+	else
+		return HRESULT_FROM_WIN32(GetLastError());
 }
 
 void Window::Unregister()
@@ -47,7 +50,7 @@ void Window::Unregister()
 	DeleteObject(s_brush);
 }
 
-bool Window::Create()
+HRESULT Window::Create()
 {
 	if (CreateWindowEx(
 		0,
@@ -65,10 +68,10 @@ bool Window::Create()
 	{
 		ShowWindow(m_hWnd, SW_SHOWDEFAULT);
 		UpdateWindow(m_hWnd);
-		return true;
+		return S_OK;
 	}
 
-	return false;
+	return HRESULT_FROM_WIN32(GetLastError());
 }
 
 void Window::Destroy()
@@ -139,7 +142,7 @@ LRESULT Window::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			OnNotify(reinterpret_cast<NMHDR*>(lParam));
 			return 0;
 		case WM_ENSURELOADED:
-			OnEnsureCrestLoaded(reinterpret_cast<Crest*>(lParam));
+			EnsureCrestLoaded(wParam);
 			return 0;
 		default:
 			return DefWindowProc(m_hWnd, uMsg, wParam, lParam);
@@ -334,14 +337,18 @@ void Window::OnLvBeginDrag(NMLISTVIEW* nmlv)
 		return;
 
 	vector<CrestPtr> selected;
+	map<Crest*, int> idxmap;
 	selected.reserve(count);
 
 	LVITEMINDEX lvii = { -1, 0 };
 	while (SendMessage(m_hCtlLv, LVM_GETNEXTITEMINDEX, reinterpret_cast<WPARAM>(&lvii), LVNI_SELECTED))
+	{
 		selected.push_back(m_crests[lvii.iItem]);
+		idxmap[m_crests[lvii.iItem].get()] = lvii.iItem;
+	}
 
 	CComPtr<IDropSource> dropSrc(new DropSource());
-	CComPtr<IDataObject> dataObj(new DataObject(m_hWnd, move(selected)));
+	CComPtr<IDataObject> dataObj(new DataObject(m_hWnd, move(selected), move(idxmap)));
 
 #if 0 // Doesn't work because our IDataObject does not implement SetData
 	{
@@ -359,22 +366,6 @@ void Window::OnLvBeginDrag(NMLISTVIEW* nmlv)
 
 	DWORD effect;
 	DoDragDrop(dataObj, dropSrc, DROPEFFECT_COPY, &effect);
-}
-
-void Window::OnEnsureCrestLoaded(Crest* crest)
-{
-	vector<CrestPtr>::iterator it;
-
-	for (it = m_crests.begin(); it != m_crests.end(); ++it)
-	{
-		if (it->get() == crest)
-			break;
-	}
-
-	if (it == m_crests.end())
-		return;
-
-	EnsureCrestLoaded(distance(m_crests.begin(), it));
 }
 
 HRESULT Window::EnsureCrestLoaded(int i)
@@ -421,9 +412,10 @@ STDMETHODIMP Window::DropSource::GiveFeedback(DWORD dwEffect)
 	return DRAGDROP_S_USEDEFAULTCURSORS;
 }
 
-Window::DataObject::DataObject(HWND hWnd, vector<CrestPtr>&& crests)
+Window::DataObject::DataObject(HWND hWnd, vector<CrestPtr>&& crests, map<Crest*, int>&& idxmap)
 :m_hWnd(hWnd),
-m_crests(crests)
+m_crests(crests),
+m_idxmap(idxmap)
 {
 	memset(&m_fe, 0, sizeof(m_fe));
 
@@ -504,7 +496,9 @@ STDMETHODIMP Window::DataObject::GetData(FORMATETC* pformatetcIn, STGMEDIUM* pme
 				return E_OUTOFMEMORY;
 
 			auto& crest = m_crests[pformatetcIn->lindex];
-			SendMessage(m_hWnd, WM_ENSURELOADED, 0, reinterpret_cast<LPARAM>(crest.get()));
+			auto it = m_idxmap.find(crest.get());
+			if (it != m_idxmap.end())
+				SendMessage(m_hWnd, WM_ENSURELOADED, it->second, 0);
 
 			HRESULT hr = crest->Save(pstm);
 			if (FAILED(hr))

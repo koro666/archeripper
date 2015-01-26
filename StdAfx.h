@@ -19,6 +19,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <map>
 #include <iterator>
 
 using namespace std;

@@ -385,9 +385,6 @@ HRESULT Crest::CreateBitmap(UINT width, UINT height, HBITMAP* phbmp)
 	if (FAILED(hr))
 		return hr;
 
-	// Sync GDI
-	GdiFlush();
-
 	// Return
 	*phbmp = reinterpret_cast<HBITMAP>(gdibmp.release());
 	return S_OK;

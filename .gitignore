@@ -1,6 +1,6 @@
 Debug
 Release
-icph
+ipch
 *.suo
 *.sdf
 *.opensdf

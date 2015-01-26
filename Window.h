@@ -7,10 +7,10 @@ class Window
 public:
 	Window();
 
-	static bool Register();
+	static HRESULT Register();
 	static void Unregister();
 
-	bool Create();
+	HRESULT Create();
 	void Destroy();
 
 	void Enumerate();
@@ -28,7 +28,6 @@ private:
 	void OnLvGetDispInfo(NMLVDISPINFO*);
 	void OnLvCacheHint(NMLVCACHEHINT*);
 	void OnLvBeginDrag(NMLISTVIEW*);
-	void OnEnsureCrestLoaded(Crest*);
 
 	HRESULT EnsureCrestLoaded(int);
 
@@ -51,29 +50,30 @@ private:
 	class DropSource : public ComObject<DropSource, IDropSource>
 	{
 	public:
-        STDMETHOD(QueryContinueDrag)(BOOL, DWORD);
+		STDMETHOD(QueryContinueDrag)(BOOL, DWORD);
 		STDMETHOD(GiveFeedback)(DWORD);
 	};
 
 	class DataObject : public ComObject<DataObject, IDataObject>
 	{
 	public:
-		explicit DataObject(HWND, vector<CrestPtr>&&);
+		DataObject(HWND, vector<CrestPtr>&&, map<Crest*, int>&&);
 		int GetDataIndex(const FORMATETC*) const;
 
 		STDMETHOD(GetData)(FORMATETC*, STGMEDIUM*);
-        STDMETHOD(GetDataHere)(FORMATETC*, STGMEDIUM*);
-        STDMETHOD(QueryGetData)(FORMATETC*);
+		STDMETHOD(GetDataHere)(FORMATETC*, STGMEDIUM*);
+		STDMETHOD(QueryGetData)(FORMATETC*);
 		STDMETHOD(GetCanonicalFormatEtc)(FORMATETC*, FORMATETC*);
-        STDMETHOD(SetData)(FORMATETC*, STGMEDIUM*, BOOL);
-        STDMETHOD(EnumFormatEtc)(DWORD, IEnumFORMATETC**);
-        STDMETHOD(DAdvise)(FORMATETC*, DWORD, IAdviseSink*, DWORD*);
-        STDMETHOD(DUnadvise)(DWORD);
-        STDMETHOD(EnumDAdvise)(IEnumSTATDATA**);
+		STDMETHOD(SetData)(FORMATETC*, STGMEDIUM*, BOOL);
+		STDMETHOD(EnumFormatEtc)(DWORD, IEnumFORMATETC**);
+		STDMETHOD(DAdvise)(FORMATETC*, DWORD, IAdviseSink*, DWORD*);
+		STDMETHOD(DUnadvise)(DWORD);
+		STDMETHOD(EnumDAdvise)(IEnumSTATDATA**);
 
 	private:
 		HWND m_hWnd;
 		vector<CrestPtr> m_crests;
+		map<Crest*, int> m_idxmap;
 		FORMATETC m_fe[2];
 	};
 };

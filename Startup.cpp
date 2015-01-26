@@ -11,22 +11,24 @@ extern "C" int WINAPI _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 
 	if (SUCCEEDED(OleInitialize(NULL)))
 	{
-		if (Window::Register())
+		if (SUCCEEDED(Window::Register()))
 		{
 			{
 				Window wnd;
 
-				wnd.Create();
-				wnd.Enumerate();
-
-				MSG m;
-				while (GetMessage(&m, NULL, 0, 0))
+				if (SUCCEEDED(wnd.Create()))
 				{
-					TranslateMessage(&m);
-					DispatchMessage(&m);
-				}
+					wnd.Enumerate();
 
-				wnd.Destroy();
+					MSG m;
+					while (GetMessage(&m, NULL, 0, 0))
+					{
+						TranslateMessage(&m);
+						DispatchMessage(&m);
+					}
+
+					wnd.Destroy();
+				}
 			}
 
 			Window::Unregister();
