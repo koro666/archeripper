@@ -23,8 +23,9 @@ private:
 	void OnSize();
 	void OnActivate(UINT);
 	void OnClose();
-	void OnNotify(NMHDR*);
+	LRESULT OnNotify(NMHDR*);
 	void OnLvDblClk(NMITEMACTIVATE*);
+	void OnLvGetEmptyMarkup(NMLVEMPTYMARKUP*);
 	void OnLvGetDispInfo(NMLVDISPINFO*);
 	void OnLvCacheHint(NMLVCACHEHINT*);
 	void OnLvBeginDrag(NMLISTVIEW*);

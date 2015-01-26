@@ -139,8 +139,7 @@ LRESULT Window::WindowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			OnClose();
 			return 0;
 		case WM_NOTIFY:
-			OnNotify(reinterpret_cast<NMHDR*>(lParam));
-			return 0;
+			return OnNotify(reinterpret_cast<NMHDR*>(lParam));
 		case WM_ENSURELOADED:
 			EnsureCrestLoaded(wParam);
 			return 0;
@@ -217,7 +216,7 @@ void Window::OnClose()
 	PostQuitMessage(0);
 }
 
-void Window::OnNotify(NMHDR* nmh)
+LRESULT Window::OnNotify(NMHDR* nmh)
 {
 	if (nmh->hwndFrom == m_hCtlLv)
 	{
@@ -225,18 +224,23 @@ void Window::OnNotify(NMHDR* nmh)
 		{
 			case NM_DBLCLK:
 				OnLvDblClk(reinterpret_cast<NMITEMACTIVATE*>(nmh));
-				break;
+				return 0;
+			case LVN_GETEMPTYMARKUP:
+				OnLvGetEmptyMarkup(reinterpret_cast<NMLVEMPTYMARKUP*>(nmh));
+				return 1;
 			case LVN_GETDISPINFO:
 				OnLvGetDispInfo(reinterpret_cast<NMLVDISPINFO*>(nmh));
-				break;
+				return 0;
 			case LVN_ODCACHEHINT:
 				OnLvCacheHint(reinterpret_cast<NMLVCACHEHINT*>(nmh));
-				break;
+				return 0;
 			case LVN_BEGINDRAG:
 				OnLvBeginDrag(reinterpret_cast<NMLISTVIEW*>(nmh));
-				break;
+				return 0;
 		}
 	}
+
+	return 0;
 }
 
 void Window::OnLvDblClk(NMITEMACTIVATE* nmia)
@@ -309,6 +313,12 @@ void Window::OnLvDblClk(NMITEMACTIVATE* nmia)
 		_sntprintf_s(buffer, _countof(buffer), _TRUNCATE, _T("Saving crest failed.\r\n\r\nError 0x%08X."), hr);
 		MessageBox(m_hWnd, buffer, NULL, MB_ICONSTOP);
 	}
+}
+
+void Window::OnLvGetEmptyMarkup(NMLVEMPTYMARKUP* nmem)
+{
+	nmem->dwFlags = EMF_CENTERED;
+	wcscpy_s(nmem->szMarkup, L_MAX_URL_LENGTH, L"No crests were found or were able to be loaded, sorry.");
 }
 
 void Window::OnLvGetDispInfo(NMLVDISPINFO* nmdi)
