@@ -1,6 +1,7 @@
 Debug
 Release
 ipch
+x64
 *.suo
 *.sdf
 *.opensdf
