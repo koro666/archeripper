@@ -87,36 +87,33 @@ vector<CrestPtr> CrestSource::Scan()
 	PathRemoveExtension(name);
 
 	for (const BYTE* pdds = m_data.get();
-		pdds < (m_data.get() + m_size.LowPart - sizeof(DWORD) - sizeof(DDSURFACEDESC2));
+		pdds < (m_data.get() + m_size.LowPart - 0x80);
 		++pdds)
 	{
-		if (*reinterpret_cast<__unaligned const DWORD*>(pdds) == 0x20534444u)
+		// Can't use DDSURFACEDESC2 on x64 because it has a different alignment
+		auto pddsd = reinterpret_cast<__unaligned const DWORD*>(pdds);
+
+		if (pddsd[0] == 0x20534444u && pddsd[1] == 0x0000007Cu)
 		{
-			auto pddsh = reinterpret_cast<__unaligned const DDSURFACEDESC2*>(pdds + sizeof(DWORD));
-			if (pddsh->dwSize == sizeof(DDSURFACEDESC2))
-			{
-				DWORD offset = static_cast<DWORD>(pdds - m_data.get());
+			DWORD offset = static_cast<DWORD>(pdds - m_data.get());
 
-				TCHAR fullname[MAX_PATH];
-				_sntprintf_s(fullname,
-					MAX_PATH, _TRUNCATE,
-					_T("%s_%08X"),
-					name,
-					offset);
+			TCHAR fullname[MAX_PATH];
+			_sntprintf_s(fullname,
+				MAX_PATH, _TRUNCATE,
+				_T("%s_%08X"),
+				name,
+				offset);
 
-				result.emplace_back(
-					make_shared<Crest>(
-						shared_from_this(),
-						fullname,
-						pdds,
-						m_size.LowPart - offset));
+			result.emplace_back(
+				make_shared<Crest>(
+					shared_from_this(),
+					fullname,
+					pdds,
+					m_size.LowPart - offset));
 				
-				pdds += sizeof(DDSURFACEDESC2);
-				if (pddsh->dwFlags & DDSD_LINEARSIZE)
-					pdds += pddsh->dwLinearSize;
-			}
-
-			pdds += sizeof(DWORD) - 1;
+			pdds += 0x7f;
+			if (pddsd[2] & DDSD_LINEARSIZE) // flags
+				pdds += pddsd[5]; // linear size
 		}
 	}
 
